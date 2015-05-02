@@ -85,13 +85,13 @@ enum // Collision_Group_t in const.h
 	LAST_SHARED_COLLISION_GROUP
 };
  
-new bool:DEBUG_FORCE_RAGE = false;
+static bool:DEBUG_FORCE_RAGE = false;
 #define ARG_LENGTH 256
  
-new bool:PRINT_DEBUG_INFO = true;
-new bool:PRINT_DEBUG_SPAM = false;
+static bool:PRINT_DEBUG_INFO = true;
+static bool:PRINT_DEBUG_SPAM = false;
 
-new Float:OFF_THE_MAP[3] = { 16383.0, 16383.0, -16383.0 };
+static Float:OFF_THE_MAP[3] = { 16383.0, 16383.0, -16383.0 };
 
 #define NOPE_AVI "vo/engineer_no01.mp3" // DO NOT DELETE FROM FUTURE PACKS
 #define INVALID_ENTREF INVALID_ENT_REFERENCE
@@ -105,11 +105,11 @@ new Float:OFF_THE_MAP[3] = { 16383.0, 16383.0, -16383.0 };
 #define MAX_EFFECT_NAME_LENGTH 48
 #define MAX_ENTITY_CLASSNAME_LENGTH 48
 #define MAX_CENTER_TEXT_LENGTH 256
+#define MAX_CENTER_TEXT 192            //  PrintCenterText() - Includes \0
 #define MAX_RANGE_STRING_LENGTH 66
 #define MAX_HULL_STRING_LENGTH 197
 #define MAX_ATTACHMENT_NAME_LENGTH 48
-#define COLOR_BUFFER_SIZE 12
-#define HEX_OR_DEC_STRING_LENGTH 12 // max -2 billion is 11 chars + null termination
+#define MAX_DIGITS 12 // max -2 billion is 11 chars + null termination, max num of characters a hex or dec string could be
 #define MAX_TERMINOLOGY_LENGTH 24
 #define MAX_ABILITY_NAME_LENGTH 33
 #define MAX_KILL_ID_LENGTH 33
@@ -117,16 +117,18 @@ new Float:OFF_THE_MAP[3] = { 16383.0, 16383.0, -16383.0 };
 // common array limits
 #define MAX_CONDITIONS 10 // TF2 conditions (bleed, dazed, etc.)
 
-#define MAX_PLAYERS_ARRAY 36
-#define MAX_PLAYERS (MAX_PLAYERS_ARRAY < (MaxClients + 1) ? MAX_PLAYERS_ARRAY : (MaxClients + 1))
+//#define MAX_PLAYERS_ARRAY 36
+//#define MAX_PLAYERS (MAX_PLAYERS_ARRAY < (MaxClients + 1) ? MAX_PLAYERS_ARRAY : (MaxClients + 1))      // 36 will never be less than 32... this always returns MaxClients + 1
 
-new bool:NULL_BLACKLIST[MAX_PLAYERS_ARRAY];
+#define TF_MAX_PLAYERS 34
 
-new MercTeam = _:TFTeam_Red;
-new BossTeam = _:TFTeam_Blue;
+static bool:NULL_BLACKLIST[TF_MAX_PLAYERS];
 
-new bool:RoundInProgress = false;
-new bool:PluginActiveThisRound = false;
+static MercTeam = _:TFTeam_Red;
+static BossTeam = _:TFTeam_Blue;
+
+static bool:RoundInProgress = false;
+static bool:PluginActiveThisRound = false;
 
 public Plugin:myinfo = {
 	name = "Freak Fortress 2: Improved Saxton",
@@ -152,72 +154,72 @@ public Plugin:myinfo = {
 #define SL_ANIM_COND TFCond:83
 #define SL_VERIFICATION_INTERVAL 0.05
 #define SL_SOLIDIFY_INTERVAL 0.05
-new bool:SL_ActiveThisRound;
-new bool:SL_CanUse[MAX_PLAYERS_ARRAY];
-new bool:SL_IsUsing[MAX_PLAYERS_ARRAY]; // internal
-new bool:SL_KeyDown[MAX_PLAYERS_ARRAY]; // internal
-new Float:SL_InitialYaw[MAX_PLAYERS_ARRAY]; // internal
-new Float:SL_InitialPitch[MAX_PLAYERS_ARRAY]; // internal, needed only for speed verification and proper push renewal
-new Float:SL_OnCooldownUntil[MAX_PLAYERS_ARRAY]; // internal
-new Float:SL_NextPushAt[MAX_PLAYERS_ARRAY]; // internal
-new Float:SL_GraceEndsAt[MAX_PLAYERS_ARRAY]; // internal
-new Float:SL_ForceRageEndAt[MAX_PLAYERS_ARRAY]; // internal
-new bool:SL_AlreadyHit[MAX_PLAYERS_ARRAY]; // internal, victim use
-new Float:SL_TrySolidifyAt; // internal
-new SL_TrySolidifyBossClientIdx; // internal
-new SL_DesiredKey[MAX_PLAYERS_ARRAY]; // based on arg1
-new Float:SL_Cooldown[MAX_PLAYERS_ARRAY]; // arg2
-new Float:SL_RageCost[MAX_PLAYERS_ARRAY]; // arg3
-new Float:SL_Velocity[MAX_PLAYERS_ARRAY]; // arg4
-new Float:SL_Damage[MAX_PLAYERS_ARRAY]; // arg5
-new bool:SL_DestroyBuildings[MAX_PLAYERS_ARRAY]; // arg6
-new Float:SL_BaseKnockback[MAX_PLAYERS_ARRAY]; // arg7
-new Float:SL_CollisionDistance[MAX_PLAYERS_ARRAY]; // arg8
-new Float:SL_CollisionHeight[MAX_PLAYERS_ARRAY]; // arg9
-new Float:SL_CollisionRadius[MAX_PLAYERS_ARRAY]; // arg10
+static bool:SL_ActiveThisRound;
+static bool:SL_CanUse[TF_MAX_PLAYERS];
+static bool:SL_IsUsing[TF_MAX_PLAYERS]; // internal
+static bool:SL_KeyDown[TF_MAX_PLAYERS]; // internal
+static Float:SL_InitialYaw[TF_MAX_PLAYERS]; // internal
+static Float:SL_InitialPitch[TF_MAX_PLAYERS]; // internal, needed only for speed verification and proper push restatical
+static Float:SL_OnCooldownUntil[TF_MAX_PLAYERS]; // internal
+static Float:SL_NextPushAt[TF_MAX_PLAYERS]; // internal
+static Float:SL_GraceEndsAt[TF_MAX_PLAYERS]; // internal
+static Float:SL_ForceRageEndAt[TF_MAX_PLAYERS]; // internal
+static bool:SL_AlreadyHit[TF_MAX_PLAYERS]; // internal, victim use
+static Float:SL_TrySolidifyAt; // internal
+static SL_TrySolidifyBossClientIdx; // internal
+static SL_DesiredKey[TF_MAX_PLAYERS]; // based on arg1
+static Float:SL_Cooldown[TF_MAX_PLAYERS]; // arg2
+static Float:SL_RageCost[TF_MAX_PLAYERS]; // arg3
+static Float:SL_Velocity[TF_MAX_PLAYERS]; // arg4
+static Float:SL_Damage[TF_MAX_PLAYERS]; // arg5
+static bool:SL_DestroyBuildings[TF_MAX_PLAYERS]; // arg6
+static Float:SL_BaseKnockback[TF_MAX_PLAYERS]; // arg7
+static Float:SL_CollisionDistance[TF_MAX_PLAYERS]; // arg8
+static Float:SL_CollisionHeight[TF_MAX_PLAYERS]; // arg9
+static Float:SL_CollisionRadius[TF_MAX_PLAYERS]; // arg10
 // arg11 only used at rage time
-new String:SL_HitSound[MAX_SOUND_FILE_LENGTH]; // arg12, shared
-new String:SL_HitEffect[MAX_EFFECT_NAME_LENGTH]; // arg13
-new String:SL_CooldownError[MAX_CENTER_TEXT_LENGTH]; // arg16
-new String:SL_NotEnoughRageError[MAX_CENTER_TEXT_LENGTH]; // arg17
-new String:SL_InWaterError[MAX_CENTER_TEXT_LENGTH]; // arg18
-new String:SL_WeighdownError[MAX_CENTER_TEXT_LENGTH]; // arg19
+static String:SL_HitSound[MAX_SOUND_FILE_LENGTH]; // arg12, shared
+static String:SL_HitEffect[MAX_EFFECT_NAME_LENGTH]; // arg13
+static String:SL_CooldownError[MAX_CENTER_TEXT]; // arg16
+static String:SL_NotEnoughRageError[MAX_CENTER_TEXT]; // arg17
+static String:SL_InWaterError[MAX_CENTER_TEXT]; // arg18
+static String:SL_WeighdownError[MAX_CENTER_TEXT]; // arg19
  
 /**
  * Saxton Slam
  */
 #define SS_STRING "saxton_slam"
 #define SS_JUMP_FORCE 800.0
-new bool:SS_ActiveThisRound;
-new bool:SS_CanUse[MAX_PLAYERS_ARRAY];
-new bool:SS_IsUsing[MAX_PLAYERS_ARRAY]; // internal
-new bool:SS_KeyDown[MAX_PLAYERS_ARRAY]; // internal
-new Float:SS_PreparingUntil[MAX_PLAYERS_ARRAY]; // internal
-new Float:SS_TauntingUntil[MAX_PLAYERS_ARRAY]; // internal
-new Float:SS_OnCooldownUntil[MAX_PLAYERS_ARRAY]; // internal
-new Float:SS_NoSlamUntil[MAX_PLAYERS_ARRAY]; // internal, workaround for a bug where slam sometimes happens in midair
-new SS_PropEntRef[MAX_PLAYERS_ARRAY]; // internal
-new bool:SS_WasFirstPerson[MAX_PLAYERS_ARRAY]; // internal
-new TFClassType:SS_OldClass[MAX_PLAYERS_ARRAY]; // internal, lets a soldier do the party trick taunt
-new SS_DesiredKey[MAX_PLAYERS_ARRAY]; // based on arg1
-new Float:SS_Cooldown[MAX_PLAYERS_ARRAY]; // arg2
-new Float:SS_RageCost[MAX_PLAYERS_ARRAY]; // arg3
-new SS_ForcedTaunt[MAX_PLAYERS_ARRAY]; // arg4
-new Float:SS_PropDelay[MAX_PLAYERS_ARRAY]; // arg5
-new String:SS_PropModel[MAX_MODEL_FILE_LENGTH]; // arg6
-new Float:SS_GravityDelay[MAX_PLAYERS_ARRAY]; // arg7
-new Float:SS_GravitySetting[MAX_PLAYERS_ARRAY]; // arg8
-new Float:SS_MaxDamage[MAX_PLAYERS_ARRAY]; // arg9
-new Float:SS_Radius[MAX_PLAYERS_ARRAY]; // arg10
-new Float:SS_DamageDecayExponent[MAX_PLAYERS_ARRAY]; // arg11
-new Float:SS_BuildingDamageFactor[MAX_PLAYERS_ARRAY]; // arg12
-new Float:SS_Knockback[MAX_PLAYERS_ARRAY]; // arg13
-new Float:SS_PitchConstraint[MAX_PLAYERS_ARRAY][2]; // arg14
+static bool:SS_ActiveThisRound;
+static bool:SS_CanUse[TF_MAX_PLAYERS];
+static bool:SS_IsUsing[TF_MAX_PLAYERS]; // internal
+static bool:SS_KeyDown[TF_MAX_PLAYERS]; // internal
+static Float:SS_PreparingUntil[TF_MAX_PLAYERS]; // internal
+static Float:SS_TauntingUntil[TF_MAX_PLAYERS]; // internal
+static Float:SS_OnCooldownUntil[TF_MAX_PLAYERS]; // internal
+static Float:SS_NoSlamUntil[TF_MAX_PLAYERS]; // internal, workaround for a bug where slam sometimes happens in midair
+static SS_PropEntRef[TF_MAX_PLAYERS]; // internal
+static bool:SS_WasFirstPerson[TF_MAX_PLAYERS]; // internal
+static TFClassType:SS_OldClass[TF_MAX_PLAYERS]; // internal, lets a soldier do the party trick taunt
+static SS_DesiredKey[TF_MAX_PLAYERS]; // based on arg1
+static Float:SS_Cooldown[TF_MAX_PLAYERS]; // arg2
+static Float:SS_RageCost[TF_MAX_PLAYERS]; // arg3
+static SS_ForcedTaunt[TF_MAX_PLAYERS]; // arg4
+static Float:SS_PropDelay[TF_MAX_PLAYERS]; // arg5
+static String:SS_PropModel[MAX_MODEL_FILE_LENGTH]; // arg6
+static Float:SS_GravityDelay[TF_MAX_PLAYERS]; // arg7
+static Float:SS_GravitySetting[TF_MAX_PLAYERS]; // arg8
+static Float:SS_MaxDamage[TF_MAX_PLAYERS]; // arg9
+static Float:SS_Radius[TF_MAX_PLAYERS]; // arg10
+static Float:SS_DamageDecayExponent[TF_MAX_PLAYERS]; // arg11
+static Float:SS_BuildingDamageFactor[TF_MAX_PLAYERS]; // arg12
+static Float:SS_Knockback[TF_MAX_PLAYERS]; // arg13
+static Float:SS_PitchConstraint[TF_MAX_PLAYERS][2]; // arg14
 // arg14 and arg15 only used at rage time
-new String:SS_CooldownError[MAX_CENTER_TEXT_LENGTH]; // arg16
-new String:SS_NotEnoughRageError[MAX_CENTER_TEXT_LENGTH]; // arg17
-new String:SS_NotMidairError[MAX_CENTER_TEXT_LENGTH]; // arg18
-new String:SS_WeighdownError[MAX_CENTER_TEXT_LENGTH]; // arg19
+static String:SS_CooldownError[MAX_CENTER_TEXT]; // arg16
+static String:SS_NotEnoughRageError[MAX_CENTER_TEXT]; // arg17
+static String:SS_NotMidairError[MAX_CENTER_TEXT]; // arg18
+static String:SS_WeighdownError[MAX_CENTER_TEXT]; // arg19
  
 /**
  * Saxton Berserker
@@ -228,59 +230,59 @@ new String:SS_WeighdownError[MAX_CENTER_TEXT_LENGTH]; // arg19
 #define SB_FLAG_MEGAHEAL 0x0004
 #define SB_FLAG_IGNITE_SOLDIER 0x0008
 #define SB_FLAG_WEAK_KNOCKBACK_IMMUNE 0x0010
-new bool:SB_ActiveThisRound;
-new bool:SB_CanUse[MAX_PLAYERS_ARRAY];
-new Float:SB_UsingUntil[MAX_PLAYERS_ARRAY];
-new Float:SB_FireExpiresAt[MAX_PLAYERS_ARRAY]; // internal, victim use only
-new bool:SB_GiveRageRefund[MAX_PLAYERS_ARRAY]; // internal, for extreme edge case
-new SB_FlameEntRefs[MAX_PLAYERS_ARRAY][2]; // internal
-new bool:SB_IsFists[MAX_PLAYERS_ARRAY]; // internal
-new Float:SB_LastAttackAvailable[MAX_PLAYERS_ARRAY]; // internal
-new bool:SB_IsAttack2[MAX_PLAYERS_ARRAY]; // internal
-new TFClassType:SB_OriginalClass[MAX_PLAYERS_ARRAY]; // internal
-new Float:SB_Duration[MAX_PLAYERS_ARRAY]; // arg1
+static bool:SB_ActiveThisRound;
+static bool:SB_CanUse[TF_MAX_PLAYERS];
+static Float:SB_UsingUntil[TF_MAX_PLAYERS];
+static Float:SB_FireExpiresAt[TF_MAX_PLAYERS]; // internal, victim use only
+static bool:SB_GiveRageRefund[TF_MAX_PLAYERS]; // internal, for extreme edge case
+static SB_FlameEntRefs[TF_MAX_PLAYERS][2]; // internal
+static bool:SB_IsFists[TF_MAX_PLAYERS]; // internal
+static Float:SB_LastAttackAvailable[TF_MAX_PLAYERS]; // internal
+static bool:SB_IsAttack2[TF_MAX_PLAYERS]; // internal
+static TFClassType:SB_OriginalClass[TF_MAX_PLAYERS]; // internal
+static Float:SB_Duration[TF_MAX_PLAYERS]; // arg1
 // arg2-arg10 not stored
-new Float:SB_Speed[MAX_PLAYERS_ARRAY]; // arg11
+static Float:SB_Speed[TF_MAX_PLAYERS]; // arg11
 // arg12 not stored
-new TFClassType:SB_TempClass[MAX_PLAYERS_ARRAY]; // arg13
-new Float:SB_FireTimeLimit[MAX_PLAYERS_ARRAY]; // arg14
-new SB_Flags[MAX_PLAYERS_ARRAY]; // arg19
+static TFClassType:SB_TempClass[TF_MAX_PLAYERS]; // arg13
+static Float:SB_FireTimeLimit[TF_MAX_PLAYERS]; // arg14
+static SB_Flags[TF_MAX_PLAYERS]; // arg19
 
 /**
  * Saxton HUDs
  */
 #define SH_STRING "saxton_huds" // a unified HUD, to prevent flicker
 #define SH_MAX_HUD_FORMAT_LENGTH 30 // keep it short since it may be individualized in a multi-boss scenario and I don't want to waste too much data space
-new bool:SH_ActiveThisRound;
-new bool:SH_CanUse[MAX_PLAYERS_ARRAY];
-new Float:SH_NextHUDAt[MAX_PLAYERS_ARRAY]; // internal
-new Float:SH_HUDInterval[MAX_PLAYERS_ARRAY]; // internal, minor interface change if using Dynamic Defaults to minimize flicker
-new SH_LastHPValue[MAX_PLAYERS_ARRAY]; // internal, for bullshit workaround
-new Float:SH_HudY[MAX_PLAYERS_ARRAY]; // arg1
-new String:SH_HudFormat[MAX_PLAYERS_ARRAY][SH_MAX_HUD_FORMAT_LENGTH]; // arg2
-new bool:SH_DisplayHealth[MAX_PLAYERS_ARRAY]; // arg3
-new bool:SH_DisplayRage[MAX_PLAYERS_ARRAY]; // arg4
-new String:SH_LungeReadyStr[MAX_CENTER_TEXT_LENGTH]; // arg5, shared
-new String:SH_LungeNotReadyStr[MAX_CENTER_TEXT_LENGTH]; // arg6, shared
-new String:SH_SlamReadyStr[MAX_CENTER_TEXT_LENGTH]; // arg7, shared
-new String:SH_SlamNotReadyStr[MAX_CENTER_TEXT_LENGTH]; // arg8, shared
-new String:SH_BerserkReadyStr[MAX_CENTER_TEXT_LENGTH]; // arg9, shared
-new String:SH_BerserkNotReadyStr[MAX_CENTER_TEXT_LENGTH]; // arg10, shared
-new SH_NormalColor[MAX_PLAYERS_ARRAY]; // arg11
-new SH_AlertColor[MAX_PLAYERS_ARRAY]; // arg12
-new bool:SH_AlertIfNotReady[MAX_PLAYERS_ARRAY]; // arg13
-new String:SH_HealthStr[MAX_CENTER_TEXT_LENGTH]; // arg14, shared
-new String:SH_RageStr[MAX_CENTER_TEXT_LENGTH]; // arg15, shared
-new bool:SH_AlertOnLowHP[MAX_PLAYERS_ARRAY]; // arg16
+static bool:SH_ActiveThisRound;
+static bool:SH_CanUse[TF_MAX_PLAYERS];
+static Float:SH_NextHUDAt[TF_MAX_PLAYERS]; // internal
+static Float:SH_HUDInterval[TF_MAX_PLAYERS]; // internal, minor interface change if using Dynamic Defaults to minimize flicker
+static SH_LastHPValue[TF_MAX_PLAYERS]; // internal, for bullshit workaround
+static Float:SH_HudY[TF_MAX_PLAYERS]; // arg1
+static String:SH_HudFormat[TF_MAX_PLAYERS][SH_MAX_HUD_FORMAT_LENGTH]; // arg2
+static bool:SH_DisplayHealth[TF_MAX_PLAYERS]; // arg3
+static bool:SH_DisplayRage[TF_MAX_PLAYERS]; // arg4
+static String:SH_LungeReadyStr[MAX_CENTER_TEXT]; // arg5, shared
+static String:SH_LungeNotReadyStr[MAX_CENTER_TEXT]; // arg6, shared
+static String:SH_SlamReadyStr[MAX_CENTER_TEXT]; // arg7, shared
+static String:SH_SlamNotReadyStr[MAX_CENTER_TEXT]; // arg8, shared
+static String:SH_BerserkReadyStr[MAX_CENTER_TEXT]; // arg9, shared
+static String:SH_BerserkNotReadyStr[MAX_CENTER_TEXT]; // arg10, shared
+static SH_NormalColor[TF_MAX_PLAYERS]; // arg11
+static SH_AlertColor[TF_MAX_PLAYERS]; // arg12
+static bool:SH_AlertIfNotReady[TF_MAX_PLAYERS]; // arg13
+static String:SH_HealthStr[MAX_CENTER_TEXT]; // arg14, shared
+static String:SH_RageStr[MAX_CENTER_TEXT]; // arg15, shared
+static bool:SH_AlertOnLowHP[TF_MAX_PLAYERS]; // arg16
 
 /**
  * Saxton Advanced Options
  */
 #define SAO_STRING "saxton_advanced_options"   // Sword Art Online yeeeeeeeeeea
-new bool:SAO_CanUse[MAX_PLAYERS_ARRAY];
-new TFCond:SAO_LungeConditions[MAX_PLAYERS_ARRAY][MAX_CONDITIONS]; // arg1
-new TFCond:SAO_SlamConditions[MAX_PLAYERS_ARRAY][MAX_CONDITIONS]; // arg2
-new TFCond:SAO_BerserkConditions[MAX_PLAYERS_ARRAY][MAX_CONDITIONS]; // arg3
+static bool:SAO_CanUse[TF_MAX_PLAYERS];
+static TFCond:SAO_LungeConditions[TF_MAX_PLAYERS][MAX_CONDITIONS]; // arg1
+static TFCond:SAO_SlamConditions[TF_MAX_PLAYERS][MAX_CONDITIONS]; // arg2
+static TFCond:SAO_BerserkConditions[TF_MAX_PLAYERS][MAX_CONDITIONS]; // arg3
 // args 12-19 aren't initialized
 #define MAX_KILL_ID_LENGTH 33
 
@@ -307,8 +309,8 @@ public OnPluginStart2()
 	HookEvent("arena_round_start", Event_RoundStart, EventHookMode_PostNoCopy);
 	PrecacheSound(NOPE_AVI); // DO NOT DELETE IN FUTURE MOD PACKS
 
-	s_hNormalHUD = CreateHudSynchronizer();
-	s_hAlertHUD = CreateHudSynchronizer();
+	s_hNormalHUD = CreateHudSynchronizer(); // All you need to use ShowSyncHudText is to initialize this handle once in OnPluginStart()
+	s_hAlertHUD = CreateHudSynchronizer();  // Then use a unique handle for what hudtext you want sync'd to not overlap itself.
 	
 	RegisterForceTaunt();
 	
@@ -333,7 +335,7 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 	SH_ActiveThisRound = false;
 	
 	// initialize arrays
-	for (new clientIdx = 1; clientIdx < MAX_PLAYERS; clientIdx++)
+	for (new clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
 	{
 		// all client inits
 		SL_CanUse[clientIdx] = false;
@@ -482,7 +484,7 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 		PrecacheSound(NOPE_AVI); // one more go at this, for paranoia sake
 		HookEvent("player_death", Saxton_PlayerDeath, EventHookMode_Pre);
 	
-		for (new clientIdx = 1; clientIdx < MAX_PLAYERS; clientIdx++)
+		for (new clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
 		{
 			if (SS_CanUse[clientIdx] || SB_CanUse[clientIdx] || SL_CanUse[clientIdx])
 				SDKHook(clientIdx, SDKHook_PreThink, Saxton_PreThink);
@@ -502,7 +504,7 @@ public Action:Timer_PostRoundStartInits(Handle:timer)
 		return Plugin_Handled;
 	
 	// finish initialization of stuff
-	for (new clientIdx = 1; clientIdx < MAX_PLAYERS; clientIdx++)
+	for (new clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
 	{
 		if (!IsLivingPlayer(clientIdx) || GetClientTeam(clientIdx) != BossTeam)
 			continue;
@@ -535,7 +537,7 @@ public Action:Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadca
 	{
 		UnhookEvent("player_death", Saxton_PlayerDeath, EventHookMode_Pre);
 	
-		for (new clientIdx = 1; clientIdx < MAX_PLAYERS; clientIdx++)
+		for (new clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
 		{
 			if (IsClientInGame(clientIdx))
 			{
@@ -890,7 +892,7 @@ public SL_Initiate(clientIdx, Float:curTime)
 	SL_GraceEndsAt[clientIdx] = curTime + 0.1; // grace for still being on the ground, without this the rage ends immediately
 	SL_ForceRageEndAt[clientIdx] = curTime + 1.0; // my code would allow people to surf endlessly on some maps. need to have to have a raw time limit.
 	SL_IsUsing[clientIdx] = true;
-	for (new victim = 1; victim < MAX_PLAYERS; victim++)
+	for (new victim = 1; victim <= MaxClients; victim++)
 	{
 		// set a neutral collision group to allow the hell to mow through enemies
 		if (IsLivingPlayer(victim))
@@ -1015,7 +1017,7 @@ public SL_PreThink(clientIdx)
 		//PrintToServer("hitPos vs bossPos: %f,%f,%f vs %f,%f,%f     colrad=%f", hitPos[0], hitPos[1], hitPos[2], bossPos[0], bossPos[1], bossPos[2], SL_CollisionRadius[clientIdx]);
 
 		// check collision every tick
-		for (new victim = 1; victim < MAX_PLAYERS; victim++)
+		for (new victim = 1; victim <= MaxClients; victim++)
 		{
 			if (SL_AlreadyHit[victim] || !IsLivingPlayer(victim) || GetClientTeam(victim) == BossTeam)
 				continue;
@@ -1367,7 +1369,7 @@ public SS_PreThink(clientIdx)
 				// or if it's a spy.
 				static Float:halePos[3];
 				GetEntPropVector(clientIdx, Prop_Send, "m_vecOrigin", halePos);
-				for (new victim = 1; victim < MAX_PLAYERS; victim++)
+				for (new victim = 1; victim <= MaxClients; victim++)
 				{
 					if (!IsLivingPlayer(victim) || GetClientTeam(victim) == BossTeam)
 						continue;
@@ -1639,7 +1641,7 @@ public SH_PreThink(clientIdx)
 			Format(rageStr, sizeof(rageStr), SH_RageStr, FF2_GetBossCharge(bossIdx, 0));
 			
 		// format ability strs
-		static String:lungeStr[MAX_CENTER_TEXT_LENGTH];
+		static String:lungeStr[MAX_CENTER_TEXT];
 		new bool:lungeAvailable = (SL_CanUse[clientIdx] && SL_RageAvailable(clientIdx, curTime, false));
 		if (!SL_CanUse[clientIdx])
 			lungeStr = "";
@@ -1647,7 +1649,7 @@ public SH_PreThink(clientIdx)
 			Format(lungeStr, sizeof(lungeStr), (lungeAvailable ? SH_LungeReadyStr : SH_LungeNotReadyStr), SL_RageCost[clientIdx]);
 		new bool:lungeIsAlert = (lungeAvailable && !SH_AlertIfNotReady[clientIdx]) || (!lungeAvailable && SH_AlertIfNotReady[clientIdx]);
 
-		static String:slamStr[MAX_CENTER_TEXT_LENGTH];
+		static String:slamStr[MAX_CENTER_TEXT];
 		new bool:slamAvailable = (SS_CanUse[clientIdx] && SS_RageAvailable(clientIdx, curTime, false));
 		if (!SS_CanUse[clientIdx])
 			slamStr = "";
@@ -1655,7 +1657,7 @@ public SH_PreThink(clientIdx)
 			Format(slamStr, sizeof(slamStr), (slamAvailable ? SH_SlamReadyStr : SH_SlamNotReadyStr), SS_RageCost[clientIdx]);
 		new bool:slamIsAlert = (slamAvailable && !SH_AlertIfNotReady[clientIdx]) || (!slamAvailable && SH_AlertIfNotReady[clientIdx]);
 
-		static String:berserkStr[MAX_CENTER_TEXT_LENGTH];
+		static String:berserkStr[MAX_CENTER_TEXT];
 		new bool:berserkAvailable = FF2_GetBossCharge(bossIdx, 0) >= 100.0;
 		if (!SB_CanUse[clientIdx])
 			berserkStr = "";
@@ -1695,7 +1697,7 @@ public OnGameFrame()
 	// need this fallback for multi-boss, as the invisible prop has collision
 	if (SS_ActiveThisRound)
 	{
-		for (new clientIdx = 1; clientIdx < MAX_PLAYERS; clientIdx++)
+		for (new clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
 		{
 			if (SS_CanUse[clientIdx] && !IsLivingPlayer(clientIdx))
 				SS_RemoveProp(clientIdx);
@@ -1720,7 +1722,7 @@ public OnGameFrame()
 			maxs[2] = bossPos[2] + 85.0;
 		
 			new bool:fail = false;
-			for (new victim = 1; victim < MAX_PLAYERS; victim++)
+			for (new victim = 1; victim <= MaxClients; victim++)
 			{
 				if (!IsLivingPlayer(victim) || GetClientTeam(victim) == BossTeam)
 					continue;
@@ -1741,7 +1743,7 @@ public OnGameFrame()
 			else
 			{
 				SL_TrySolidifyAt = FAR_FUTURE;
-				for (new victim = 1; victim < MAX_PLAYERS; victim++)
+				for (new victim = 1; victim <= MaxClients; victim++)
 					if (IsLivingPlayer(victim))
 						SetEntProp(victim, Prop_Send, "m_CollisionGroup", COLLISION_GROUP_PLAYER);
 			}
@@ -1751,7 +1753,7 @@ public OnGameFrame()
 	// also need the game frame for removing excess fire
 	if (SB_ActiveThisRound)
 	{
-		for (new victim = 1; victim < MAX_PLAYERS; victim++)
+		for (new victim = 1; victim <= MaxClients; victim++)
 		{
 			if (IsLivingPlayer(victim) && curTime >= SB_FireExpiresAt[victim])
 			{
@@ -1900,7 +1902,7 @@ public Action:RemoveEntityNoTele(Handle:timer, any:entid)
 
 stock bool:IsLivingPlayer(clientIdx)
 {
-	if (clientIdx <= 0 || clientIdx >= MAX_PLAYERS)
+	if (clientIdx <= 0 || clientIdx > MaxClients)
 		return false;
 		
 	return IsClientInGame(clientIdx) && IsPlayerAlive(clientIdx);
@@ -1993,13 +1995,13 @@ stock FindRandomPlayer(bool:isBossTeam, Float:position[3] = NULL_VECTOR, Float:m
 	return FindRandomPlayerBlacklist(isBossTeam, NULL_BLACKLIST, position, maxDistance, anyTeam, deadOnly);
 }
 
-stock FindRandomPlayerBlacklist(bool:isBossTeam, const bool:blacklist[MAX_PLAYERS_ARRAY], Float:position[3] = NULL_VECTOR, Float:maxDistance = 0.0, bool:anyTeam = false, bool:deadOnly = false)
+stock FindRandomPlayerBlacklist(bool:isBossTeam, const bool:blacklist[TF_MAX_PLAYERS], Float:position[3] = NULL_VECTOR, Float:maxDistance = 0.0, bool:anyTeam = false, bool:deadOnly = false)
 {
 	new player = -1;
 
 	// first, get a player count for the team we care about
 	new playerCount = 0;
-	for (new clientIdx = 1; clientIdx < MAX_PLAYERS; clientIdx++)
+	for (new clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
 	{
 		if (!deadOnly && !IsLivingPlayer(clientIdx))
 			continue;
@@ -2031,7 +2033,7 @@ stock FindRandomPlayerBlacklist(bool:isBossTeam, const bool:blacklist[MAX_PLAYER
 	// now randomly choose our victim
 	new rand = GetRandomInt(0, playerCount - 1);
 	playerCount = 0;
-	for (new clientIdx = 1; clientIdx < MAX_PLAYERS; clientIdx++)
+	for (new clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
 	{
 		if (!deadOnly && !IsLivingPlayer(clientIdx))
 			continue;
@@ -2128,7 +2130,7 @@ stock GetLivingMercCount()
 {
 	// recalculate living players
 	new livingMercCount = 0;
-	for (new clientIdx = 1; clientIdx < MAX_PLAYERS; clientIdx++)
+	for (new clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
 		if (IsLivingPlayer(clientIdx) && GetClientTeam(clientIdx) != BossTeam)
 			livingMercCount++;
 	
@@ -2211,10 +2213,10 @@ stock ReadMaterialToInt(bossIdx, const String:ability_name[], argInt)
 	return -1;
 }
 
-stock ReadCenterText(bossIdx, const String:ability_name[], argInt, String:centerText[MAX_CENTER_TEXT_LENGTH])
+stock ReadCenterText(bossIdx, const String:ability_name[], argInt, String:centerText[MAX_CENTER_TEXT])
 {
-	FF2_GetAbilityArgumentString(bossIdx, this_plugin_name, ability_name, argInt, centerText, MAX_CENTER_TEXT_LENGTH);
-	ReplaceString(centerText, MAX_CENTER_TEXT_LENGTH, "\\n", "\n");
+	FF2_GetAbilityArgumentString(bossIdx, this_plugin_name, ability_name, argInt, centerText, MAX_CENTER_TEXT);
+	ReplaceString(centerText, MAX_CENTER_TEXT, "\\n", "\n");
 }
 
 stock ReadConditions(bossIdx, const String:ability_name[], argInt, TFCond:conditions[MAX_CONDITIONS])
@@ -2364,7 +2366,7 @@ stock PseudoAmbientSound(clientIdx, String:soundPath[], count=1, Float:radius=10
 		GetEntPropVector(clientIdx, Prop_Send, "m_vecOrigin", emitterPos);
 	else
 		GetClientEyePosition(clientIdx, emitterPos);
-	for (new listener = 1; listener < MAX_PLAYERS; listener++)
+	for (new listener = 1; listener <= MaxClients; listener++)
 	{
 		if (!IsClientInGame(listener))
 			continue;
@@ -2444,7 +2446,7 @@ stock bool:WithinBounds(Float:point[3], Float:min[3], Float:max[3])
 		point[2] >= min[2] && point[2] <= max[2];
 }
 
-stock ReadHexOrDecInt(String:hexOrDecString[HEX_OR_DEC_STRING_LENGTH])
+stock ReadHexOrDecInt(String:hexOrDecString[MAX_DIGITS])
 {
 	if (StrContains(hexOrDecString, "0x") == 0)
 	{
@@ -2469,8 +2471,8 @@ stock ReadHexOrDecInt(String:hexOrDecString[HEX_OR_DEC_STRING_LENGTH])
 
 stock ReadHexOrDecString(bossIdx, const String:ability_name[], argIdx)
 {
-	static String:hexOrDecString[HEX_OR_DEC_STRING_LENGTH];
-	FF2_GetAbilityArgumentString(bossIdx, this_plugin_name, ability_name, argIdx, hexOrDecString, HEX_OR_DEC_STRING_LENGTH);
+	static String:hexOrDecString[MAX_DIGITS];
+	FF2_GetAbilityArgumentString(bossIdx, this_plugin_name, ability_name, argIdx, hexOrDecString, MAX_DIGITS);
 	return ReadHexOrDecInt(hexOrDecString);
 }
 
@@ -2581,9 +2583,9 @@ stock GetR(c) { return abs((c>>16)&0xff); }
 stock GetG(c) { return abs((c>>8 )&0xff); }
 stock GetB(c) { return abs((c    )&0xff); }
 
-stock ColorToDecimalString(String:buffer[COLOR_BUFFER_SIZE], rgb)
+stock ColorToDecimalString(String:buffer[MAX_DIGITS], rgb)
 {
-	Format(buffer, COLOR_BUFFER_SIZE, "%d %d %d", GetR(rgb), GetG(rgb), GetB(rgb));
+	Format(buffer, sizeof(buffer), "%d %d %d", GetR(rgb), GetG(rgb), GetB(rgb));
 }
 
 stock BlendColorsRGB(oldColor, Float:oldWeight, newColor, Float:newWeight)
