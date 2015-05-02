@@ -378,7 +378,7 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 			ReadCenterText(bossIdx, SL_STRING, 19, SL_WeighdownError);
 
 			// initialize key state
-			SL_KeyDown[clientIdx] = (GetClientButtons(clientIdx) & SL_DesiredKey[clientIdx]) != 0;
+			SL_KeyDown[clientIdx] = (GetValidButtons(clientIdx) & SL_DesiredKey[clientIdx]) != 0;
 			
 			// fix pitch constraint
 			if (!pcSuccess)
@@ -419,7 +419,7 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 			ReadCenterText(bossIdx, SS_STRING, 19, SS_WeighdownError);
 
 			// initialize key state
-			SS_KeyDown[clientIdx] = (GetClientButtons(clientIdx) & SS_DesiredKey[clientIdx]) != 0;
+			SS_KeyDown[clientIdx] = (GetValidButtons(clientIdx) & SS_DesiredKey[clientIdx]) != 0;
 		}
 
 		if ((SB_CanUse[clientIdx] = FF2_HasAbility(bossIdx, this_plugin_name, SB_STRING)) == true)
@@ -495,6 +495,11 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 	}
 	
 	CreateTimer(0.3, Timer_PostRoundStartInits, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+stock GetValidButtons(iClient)
+{
+	return (IsClientInGame(iClient) ? GetClientButtons(iClient) : 0);
 }
 
 public Action:Timer_PostRoundStartInits(Handle:timer)
@@ -1607,7 +1612,7 @@ public Rage_SaxtonBerserk(clientIdx)
  */
 public SH_PreThink(clientIdx)
 {
-	if (!(GetClientButtons(Hale) & IN_SCORE))
+	if (!(GetClientButtons(clientIdx) & IN_SCORE))
     {
     	return; // Don't show hud when player is viewing scoreboard, as it will only flash violently
     }
@@ -1620,11 +1625,11 @@ public SH_PreThink(clientIdx)
 		new bossIdx = FF2_GetBossIndex(clientIdx);
 		if (bossIdx < 0)
 			return;
-		
+
 		// format health str
 		static String:healthStr[80];
 		healthStr = "";
-		new hp = GetEntProp(clientIdx, Prop_Send, "m_iHealth"); // see my rant about this at the bottom of this file.
+		new hp = GetEntProp(clientIdx, Prop_Send, "m_iHealth"); // see my rant about this at the bottom of this file.   
 		if (abs(hp - SH_LastHPValue[clientIdx]) <= 5) // this way it'll be wrong, but relatively stable in appearance
 			hp = SH_LastHPValue[clientIdx];
 		else
@@ -2779,6 +2784,46 @@ stock TFClassType:GetClassOfTaunt(tauntIdx, TFClassType:currentPlayerClass)
 	}
 	
 	return currentPlayerClass;
+}
+
+/**
+ * Get a client's current health
+ * This may duplicate SourceMod's GetClientHealth
+ * 
+ * @return client's current health or -1 if it couldn't be found
+ */
+stock TF2_GetHealth(client)
+{
+	return GetResourceProp(client, "m_iHealth");
+}
+
+// rant ?
+
+/**
+ * Internal function for getting player resource data
+ */
+static stock GetResourceProp(client, const String:resourceName[])
+{
+	if (client < 1 || client > MaxClients)
+	{
+		ThrowError("Client index %d is out of bounds", client);
+		return -1;
+	}
+	
+	if (!IsClientInGame(client))
+	{
+		ThrowError("Client index %d is not in game", client);
+		return -1;
+	}
+	
+	new playerResource = GetPlayerResourceEntity();
+	if (playerResource == -1 || !IsValidEntity(playerResource))
+	{
+		LogError("Player Resource Entity doesn't exist.")
+		return -1;
+	}
+
+	return GetEntProp(playerResource, Prop_Send, resourceName, _, client);
 }
 
 /**
