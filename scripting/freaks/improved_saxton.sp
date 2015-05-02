@@ -104,7 +104,7 @@ static Float:OFF_THE_MAP[3] = { 16383.0, 16383.0, -16383.0 };
 #define MAX_WEAPON_ARG_LENGTH 256
 #define MAX_EFFECT_NAME_LENGTH 48
 #define MAX_ENTITY_CLASSNAME_LENGTH 48
-#define MAX_CENTER_TEXT_LENGTH 256
+#define MAX_CENTER_HUD_TEXT_LENGTH 256	   //  This is more for ShowHudText() / ShowSyncHudText()
 #define MAX_CENTER_TEXT 192            //  PrintCenterText() - Includes \0
 #define MAX_RANGE_STRING_LENGTH 66
 #define MAX_HULL_STRING_LENGTH 197
@@ -1646,7 +1646,7 @@ public SH_PreThink(clientIdx)
 			Format(rageStr, sizeof(rageStr), SH_RageStr, FF2_GetBossCharge(bossIdx, 0));
 			
 		// format ability strs
-		static String:lungeStr[MAX_CENTER_TEXT];
+		static String:lungeStr[MAX_CENTER_HUD_TEXT_LENGTH];
 		new bool:lungeAvailable = (SL_CanUse[clientIdx] && SL_RageAvailable(clientIdx, curTime, false));
 		if (!SL_CanUse[clientIdx])
 			lungeStr = "";
@@ -1654,7 +1654,7 @@ public SH_PreThink(clientIdx)
 			Format(lungeStr, sizeof(lungeStr), (lungeAvailable ? SH_LungeReadyStr : SH_LungeNotReadyStr), SL_RageCost[clientIdx]);
 		new bool:lungeIsAlert = (lungeAvailable && !SH_AlertIfNotReady[clientIdx]) || (!lungeAvailable && SH_AlertIfNotReady[clientIdx]);
 
-		static String:slamStr[MAX_CENTER_TEXT];
+		static String:slamStr[MAX_CENTER_HUD_TEXT_LENGTH];
 		new bool:slamAvailable = (SS_CanUse[clientIdx] && SS_RageAvailable(clientIdx, curTime, false));
 		if (!SS_CanUse[clientIdx])
 			slamStr = "";
@@ -1662,7 +1662,7 @@ public SH_PreThink(clientIdx)
 			Format(slamStr, sizeof(slamStr), (slamAvailable ? SH_SlamReadyStr : SH_SlamNotReadyStr), SS_RageCost[clientIdx]);
 		new bool:slamIsAlert = (slamAvailable && !SH_AlertIfNotReady[clientIdx]) || (!slamAvailable && SH_AlertIfNotReady[clientIdx]);
 
-		static String:berserkStr[MAX_CENTER_TEXT];
+		static String:berserkStr[MAX_CENTER_HUD_TEXT_LENGTH];
 		new bool:berserkAvailable = FF2_GetBossCharge(bossIdx, 0) >= 100.0;
 		if (!SB_CanUse[clientIdx])
 			berserkStr = "";
