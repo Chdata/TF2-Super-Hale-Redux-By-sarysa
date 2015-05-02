@@ -276,7 +276,7 @@ new bool:SH_AlertOnLowHP[MAX_PLAYERS_ARRAY]; // arg16
 /**
  * Saxton Advanced Options
  */
-#define SAO_STRING "saxton_advanced_options"
+#define SAO_STRING "saxton_advanced_options"   // Sword Art Online yeeeeeeeeeea
 new bool:SAO_CanUse[MAX_PLAYERS_ARRAY];
 new TFCond:SAO_LungeConditions[MAX_PLAYERS_ARRAY][MAX_CONDITIONS]; // arg1
 new TFCond:SAO_SlamConditions[MAX_PLAYERS_ARRAY][MAX_CONDITIONS]; // arg2
@@ -296,6 +296,9 @@ PrintRageWarning()
 	PrintToServer("*  This is only for test servers. Disable this on your live server. *");
 	PrintToServer("*********************************************************************");
 }
+
+static Handle:s_hNormalHUD;
+static Handle:s_hAlertHUD;
  
 #define CMD_FORCE_RAGE "rage"
 public OnPluginStart2()
@@ -303,6 +306,9 @@ public OnPluginStart2()
 	HookEvent("arena_win_panel", Event_RoundEnd, EventHookMode_PostNoCopy);
 	HookEvent("arena_round_start", Event_RoundStart, EventHookMode_PostNoCopy);
 	PrecacheSound(NOPE_AVI); // DO NOT DELETE IN FUTURE MOD PACKS
+
+	s_hNormalHUD = CreateHudSynchronizer();
+	s_hAlertHUD = CreateHudSynchronizer();
 	
 	RegisterForceTaunt();
 	
@@ -1599,6 +1605,11 @@ public Rage_SaxtonBerserk(clientIdx)
  */
 public SH_PreThink(clientIdx)
 {
+	if (!(GetClientButtons(Hale) & IN_SCORE))
+    {
+    	return; // Don't show hud when player is viewing scoreboard, as it will only flash violently
+    }
+
 	new Float:curTime = GetEngineTime();
 	
 	if (curTime >= SH_NextHUDAt[clientIdx])
@@ -1653,14 +1664,21 @@ public SH_PreThink(clientIdx)
 		new bool:berserkIsAlert = (berserkAvailable && !SH_AlertIfNotReady[clientIdx]) || (!berserkAvailable && SH_AlertIfNotReady[clientIdx]);
 
 		// normal HUD
+
 		SetHudTextParams(-1.0, SH_HudY[clientIdx], SH_HUDInterval[clientIdx] + 0.05, GetR(SH_NormalColor[clientIdx]), GetG(SH_NormalColor[clientIdx]), GetB(SH_NormalColor[clientIdx]), 192);
-		ShowHudText(clientIdx, -1, SH_HudFormat[clientIdx], (!healthIsAlert ? healthStr : ""), rageStr,
+		ShowSyncHudText(clientIdx, s_hNormalHUD, SH_HudFormat[clientIdx], (!healthIsAlert ? healthStr : ""), rageStr,
 					(!lungeIsAlert ? lungeStr : ""), (!slamIsAlert ? slamStr : ""), (!berserkIsAlert ? berserkStr : ""));
+
+		//ShowHudText(clientIdx, -1, SH_HudFormat[clientIdx], (!healthIsAlert ? healthStr : ""), rageStr,
+		//			(!lungeIsAlert ? lungeStr : ""), (!slamIsAlert ? slamStr : ""), (!berserkIsAlert ? berserkStr : ""));
 		
 		// alert HUD
 		SetHudTextParams(-1.0, SH_HudY[clientIdx], SH_HUDInterval[clientIdx] + 0.05, GetR(SH_AlertColor[clientIdx]), GetG(SH_AlertColor[clientIdx]), GetB(SH_AlertColor[clientIdx]), 192);
-		ShowHudText(clientIdx, -1, SH_HudFormat[clientIdx], (healthIsAlert ? healthStr : ""), "",
+		ShowSyncHudText(clientIdx, s_hAlertHUD, SH_HudFormat[clientIdx], (healthIsAlert ? healthStr : ""), "",
 					(lungeIsAlert ? lungeStr : ""), (slamIsAlert ? slamStr : ""), (berserkIsAlert ? berserkStr : ""));
+
+		//ShowHudText(clientIdx, -1, SH_HudFormat[clientIdx], (healthIsAlert ? healthStr : ""), "",
+		//			(lungeIsAlert ? lungeStr : ""), (slamIsAlert ? slamStr : ""), (berserkIsAlert ? berserkStr : ""));
 	}
 }
 
