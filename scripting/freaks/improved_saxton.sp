@@ -346,9 +346,11 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 		SB_FireExpiresAt[clientIdx] = FAR_FUTURE;
 
 		// boss-only inits
-		new bossIdx = FF2_GetBossIndex(clientIdx);
+		new bossIdx = IsLivingPlayer(clientIdx) ? FF2_GetBossIndex(clientIdx) : -1;
 		if (bossIdx < 0)
 			continue;
+
+		// from this point on clientIdx is validated InGame
 
 		if ((SL_CanUse[clientIdx] = FF2_HasAbility(bossIdx, this_plugin_name, SL_STRING)) == true)
 		{
@@ -378,7 +380,7 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 			ReadCenterText(bossIdx, SL_STRING, 19, SL_WeighdownError);
 
 			// initialize key state
-			SL_KeyDown[clientIdx] = (GetValidButtons(clientIdx) & SL_DesiredKey[clientIdx]) != 0;
+			SL_KeyDown[clientIdx] = (GetClientButtons(clientIdx) & SL_DesiredKey[clientIdx]) != 0;
 			
 			// fix pitch constraint
 			if (!pcSuccess)
@@ -419,7 +421,7 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 			ReadCenterText(bossIdx, SS_STRING, 19, SS_WeighdownError);
 
 			// initialize key state
-			SS_KeyDown[clientIdx] = (GetValidButtons(clientIdx) & SS_DesiredKey[clientIdx]) != 0;
+			SS_KeyDown[clientIdx] = (GetClientButtons(clientIdx) & SS_DesiredKey[clientIdx]) != 0;
 		}
 
 		if ((SB_CanUse[clientIdx] = FF2_HasAbility(bossIdx, this_plugin_name, SB_STRING)) == true)
@@ -495,11 +497,6 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 	}
 	
 	CreateTimer(0.3, Timer_PostRoundStartInits, _, TIMER_FLAG_NO_MAPCHANGE);
-}
-
-stock GetValidButtons(iClient)
-{
-	return (IsClientInGame(iClient) ? GetClientButtons(iClient) : 0);
 }
 
 public Action:Timer_PostRoundStartInits(Handle:timer)
