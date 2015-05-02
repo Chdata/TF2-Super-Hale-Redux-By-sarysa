@@ -323,6 +323,13 @@ public OnPluginStart2()
 
 public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 {
+	/*
+		in case round end isn't executing...
+
+		which only happens if there's a sourcemod error in the Event_RoundEnd callback, which means this plugin needs to be repaired anyway
+	*/
+	//Saxton_Cleanup();
+
 	// since this can now be dynamically switched.
 	BossTeam = FF2_GetBossTeam();
 	RoundInProgress = true;
@@ -532,14 +539,31 @@ public Action:Timer_PostRoundStartInits(Handle:timer)
 public Action:Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	RoundInProgress = false;
+	Saxton_Cleanup();
+}
+
+public Saxton_Cleanup()
+{
+	if (!PluginActiveThisRound)
+		return;
+
 	PluginActiveThisRound = false;
 	
 	// remove prethink. also fix gravity, because it leaks.
 	if (SS_ActiveThisRound || SB_ActiveThisRound || SL_ActiveThisRound || SH_ActiveThisRound)
 	{
+		if (SL_ActiveThisRound)
+			SL_EnsureCollision = true;
+	
+		// putting these first, in case anything here causes an error...it'll minimize the damage, but not eliminate.
+		SS_ActiveThisRound = false;
+		SB_ActiveThisRound = false;
+		SL_ActiveThisRound = false;
+		SH_ActiveThisRound = false;
+		
 		UnhookEvent("player_death", Saxton_PlayerDeath, EventHookMode_Pre);
 	
-		for (new clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
+		for (new clientIdx = 1; clientIdx < MAX_PLAYERS; clientIdx++)
 		{
 			if (IsClientInGame(clientIdx))
 			{
@@ -560,12 +584,11 @@ public Action:Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadca
 
 			if (SS_CanUse[clientIdx]) // do this even if they're dead
 				SS_RemoveProp(clientIdx);
+				
+			// remove megaheal, in case somehow in some configuration this doesn't reset on round change
+			if (IsLivingPlayer(clientIdx) && TF2_IsPlayerInCondition(clientIdx, TFCond_MegaHeal))
+				TF2_RemoveCondition(clientIdx, TFCond_MegaHeal);
 		}
-
-		SS_ActiveThisRound = false;
-		SB_ActiveThisRound = false;
-		SL_ActiveThisRound = false;
-		SH_ActiveThisRound = false;
 	}
 }
 
