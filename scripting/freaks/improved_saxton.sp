@@ -6,8 +6,6 @@
 #include <tf2items>
 #include <tf2_stocks>
 #include <sdkhooks>
-#include <sdktools>
-#include <sdktools_functions>
 #include <freak_fortress_2>
 #include <freak_fortress_2_subplugin>
 #include <tf2attributes>
@@ -133,7 +131,7 @@ static bool:PluginActiveThisRound = false;
 public Plugin:myinfo = {
 	name = "Freak Fortress 2: Improved Saxton",
 	author = "sarysa",
-	version = "1.0.0",
+	version = "1.0.1",
 }
 
 #define FAR_FUTURE 100000000.0
@@ -155,6 +153,7 @@ public Plugin:myinfo = {
 #define SL_VERIFICATION_INTERVAL 0.05
 #define SL_SOLIDIFY_INTERVAL 0.05
 static bool:SL_ActiveThisRound;
+static bool:SL_EnsureCollision = false; // an extra layer of protection for the collision fudging that lunge does
 static bool:SL_CanUse[TF_MAX_PLAYERS];
 static bool:SL_IsUsing[TF_MAX_PLAYERS]; // internal
 static bool:SL_KeyDown[TF_MAX_PLAYERS]; // internal
@@ -352,6 +351,13 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 		SAO_CanUse[clientIdx] = false;
 		SB_FireExpiresAt[clientIdx] = FAR_FUTURE;
 
+		if (SL_EnsureCollision && IsLivingPlayer(clientIdx))
+		{
+			SetEntProp(clientIdx, Prop_Send, "m_CollisionGroup", COLLISION_GROUP_PLAYER);
+			if (PRINT_DEBUG_SPAM)
+				PrintToServer("Ensured correct collision for player %d", clientIdx);
+		}
+
 		// boss-only inits
 		new bossIdx = IsLivingPlayer(clientIdx) ? FF2_GetBossIndex(clientIdx) : -1;
 		if (bossIdx < 0)
@@ -486,6 +492,8 @@ public Action:Event_RoundStart(Handle:event, const String:name[], bool:dontBroad
 			ReadConditions(bossIdx, SAO_STRING, 3, SAO_BerserkConditions[clientIdx]);
 		}
 	}
+
+	SL_EnsureCollision = false;
 	
 	// add prethink and death hook for saxton rages and saxton HUD
 	if (SS_ActiveThisRound || SB_ActiveThisRound || SL_ActiveThisRound || SH_ActiveThisRound)
@@ -545,7 +553,9 @@ public Action:Event_RoundEnd(Handle:event, const String:name[], bool:dontBroadca
 public Saxton_Cleanup()
 {
 	if (!PluginActiveThisRound)
+	{
 		return;
+	}
 
 	PluginActiveThisRound = false;
 	
@@ -563,7 +573,7 @@ public Saxton_Cleanup()
 		
 		UnhookEvent("player_death", Saxton_PlayerDeath, EventHookMode_Pre);
 	
-		for (new clientIdx = 1; clientIdx < MAX_PLAYERS; clientIdx++)
+		for (new clientIdx = 1; clientIdx <= MaxClients; clientIdx++)
 		{
 			if (IsClientInGame(clientIdx))
 			{
