@@ -135,7 +135,7 @@ public Plugin:myinfo = {
 }
 
 #define FAR_FUTURE 100000000.0
-#define COND_JARATE_WATER 86
+//#define COND_JARATE_WATER 86
 
 /**
  * Shared
@@ -736,9 +736,9 @@ public Action:Saxton_PlayerDeath(Handle:event, const String:name[], bool:dontBro
 	new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 	if (IsLivingPlayer(attacker))
 	{
-		static String:killWeapon[MAX_KILL_ID_LENGTH];
-		static String:killName[MAX_KILL_ID_LENGTH];
-		new bool:override = false;
+		new String:killWeapon[MAX_KILL_ID_LENGTH] = "fists";
+		new String:killName[MAX_KILL_ID_LENGTH] = "saxton melee";
+		//new bool:override = false;
 		
 		new bossIdx = FF2_GetBossIndex(attacker);
 		if (bossIdx < 0)
@@ -746,36 +746,34 @@ public Action:Saxton_PlayerDeath(Handle:event, const String:name[], bool:dontBro
 
 		if (SS_CanUse[attacker] && SS_IsUsing[attacker])
 		{
-			override = true;
+			//override = true;
 			if (Saxton_TempGoomba)
 				Saxton_GetKillStringWithDefault(bossIdx, SAO_STRING, 15, killWeapon, attacker, "mantreads");
 			else
-				Saxton_GetKillStringWithDefault(bossIdx, SAO_STRING, 16, killWeapon, attacker, "firedeath");
+				Saxton_GetKillStringWithDefault(bossIdx, SAO_STRING, 16, killWeapon, attacker, "pumpkindeath"); //  purgatory  firedeath
 			Saxton_GetKillStringWithDefault(bossIdx, SAO_STRING, 12, killName, attacker, "saxton slam");
 		}
-		
-		if (SL_CanUse[attacker] && SL_IsUsing[attacker])
+		else if (SL_CanUse[attacker] && SL_IsUsing[attacker])
 		{
-			override = true;
+			//override = true;
 			if (Saxton_TempGoomba)
 				Saxton_GetKillStringWithDefault(bossIdx, SAO_STRING, 17, killWeapon, attacker, "mantreads");
 			else
 				Saxton_GetKillStringWithDefault(bossIdx, SAO_STRING, 18, killWeapon, attacker, "apocofists");
 			Saxton_GetKillStringWithDefault(bossIdx, SAO_STRING, 13, killName, attacker, "saxton lunge");
 		}
-		
-		if (SB_CanUse[attacker] && SB_UsingUntil[attacker] != FAR_FUTURE)
+		else if (SB_CanUse[attacker] && SB_UsingUntil[attacker] != FAR_FUTURE)
 		{
-			override = true;
-			Saxton_GetKillStringWithDefault(bossIdx, SAO_STRING, 19, killWeapon, attacker, "vehicle");
+			//override = true;
+			Saxton_GetKillStringWithDefault(bossIdx, SAO_STRING, 19, killWeapon, attacker, "gloves_running_urgently"); // vehicle
 			Saxton_GetKillStringWithDefault(bossIdx, SAO_STRING, 14, killName, attacker, "saxton berserk");
 		}
 		
-		if (override)
-		{
-			SetEventString(event, "weapon", killWeapon); // train
-			SetEventString(event, "weapon_logclassname", killName);
-		}
+		//if (override)
+		//{
+		SetEventString(event, "weapon", killWeapon); // train
+		SetEventString(event, "weapon_logclassname", killName);
+		//}
 	}
 	
 	return Plugin_Continue;
