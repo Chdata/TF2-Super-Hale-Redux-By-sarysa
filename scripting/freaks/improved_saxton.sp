@@ -14,6 +14,8 @@
 #tryinclude <goomba>
 #define REQUIRE_PLUGIN
 
+#define PLUGIN_VERSION "1.0.2"
+
 /**
  * Rages for sarysa's improved version of Saxton Hale
  *
@@ -131,7 +133,7 @@ static bool:PluginActiveThisRound = false;
 public Plugin:myinfo = {
 	name = "Freak Fortress 2: Improved Saxton",
 	author = "sarysa",
-	version = "1.0.1",
+	version = PLUGIN_VERSION,
 }
 
 #define FAR_FUTURE 100000000.0
@@ -188,7 +190,9 @@ static String:SL_WeighdownError[MAX_CENTER_TEXT]; // arg19
  * Saxton Slam
  */
 #define SS_STRING "saxton_slam"
-#define FX_SS_GROUNDPOUND "hammer_impact_button" // Particle effect to display when Hale lands. This is from the hammer in sd_doomsday_event
+//#define FX_SS_GROUNDPOUND "hammer_impact_button" // Particle effect to display when Hale lands. This is from the hammer in sd_doomsday_event
+#define FX_SS_GROUNDPOUND1 "hammer_impact_button_dust2"
+#define FX_SS_GROUNDPOUND2 "hammer_impact_button_ring"
 #define SS_JUMP_FORCE 800.0
 static bool:SS_ActiveThisRound;
 static bool:SS_CanUse[TF_MAX_PLAYERS];
@@ -313,7 +317,8 @@ public OnPluginStart2()
 	HookEvent("arena_win_panel", Event_RoundEnd, EventHookMode_PostNoCopy);
 	HookEvent("arena_round_start", Event_RoundStart, EventHookMode_PostNoCopy);
 	PrecacheSound(NOPE_AVI); // DO NOT DELETE IN FUTURE MOD PACKS
-	PrecacheParticleSystem(FX_SS_GROUNDPOUND);
+	PrecacheParticleSystem(FX_SS_GROUNDPOUND1);
+	PrecacheParticleSystem(FX_SS_GROUNDPOUND2);
 
 	s_hNormalHUD = CreateHudSynchronizer(); // All you need to use ShowSyncHudText is to initialize this handle once in OnPluginStart()
 	s_hAlertHUD = CreateHudSynchronizer();  // Then use a unique handle for what hudtext you want sync'd to not overlap itself.
@@ -1411,7 +1416,8 @@ public SS_PreThink(clientIdx)
 				// or if it's a spy.
 				static Float:halePos[3];
 				GetEntPropVector(clientIdx, Prop_Send, "m_vecOrigin", halePos);
-				TE_Particle(FX_SS_GROUNDPOUND, halePos, _, _, clientIdx);
+				TE_Particle(FX_SS_GROUNDPOUND1, halePos, _, _, clientIdx);
+				TE_Particle(FX_SS_GROUNDPOUND2, halePos, _, _, clientIdx);
 				for (new victim = 1; victim <= MaxClients; victim++)
 				{
 					if (!IsLivingPlayer(victim) || GetClientTeam(victim) == BossTeam)
