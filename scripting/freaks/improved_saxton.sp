@@ -1406,7 +1406,7 @@ public SS_PreThink(clientIdx)
 				// or if it's a spy.
 				static Float:halePos[3];
 				GetEntPropVector(clientIdx, Prop_Send, "m_vecOrigin", halePos);
-				TE_Particle(FX_SS_GROUNDPOUND, halePos, _, _, clientIdx, _, _, false);
+				TE_Particle(FX_SS_GROUNDPOUND, halePos, _, _, clientIdx);
 				for (new victim = 1; victim <= MaxClients; victim++)
 				{
 					if (!IsLivingPlayer(victim) || GetClientTeam(victim) == BossTeam)
@@ -1645,7 +1645,7 @@ public Rage_SaxtonBerserk(clientIdx)
  */
 public SH_PreThink(clientIdx)
 {
-	if (!(GetClientButtons(clientIdx) & IN_SCORE))
+	if ((GetClientButtons(clientIdx) & IN_SCORE))
     {
     	return; // Don't show hud when player is viewing scoreboard, as it will only flash violently
     }
