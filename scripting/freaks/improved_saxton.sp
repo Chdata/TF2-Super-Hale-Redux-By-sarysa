@@ -251,6 +251,11 @@ static SB_Flags[TF_MAX_PLAYERS]; // arg19
 /**
  * Saxton HUDs
  */
+enum e_flNext
+{
+    e_flNextHudBlockedUntil = 0,
+}
+
 #define SH_STRING "saxton_huds" // a unified HUD, to prevent flicker
 #define SH_MAX_HUD_FORMAT_LENGTH 30 // keep it short since it may be individualized in a multi-boss scenario and I don't want to waste too much data space
 static bool:SH_ActiveThisRound;
@@ -1645,8 +1650,9 @@ public Rage_SaxtonBerserk(clientIdx)
  */
 public SH_PreThink(clientIdx)
 {
-	if ((GetClientButtons(clientIdx) & IN_SCORE))
+	if (!IsNextTime(e_flNextHudBlockedUntil) || (GetClientButtons(clientIdx) & IN_SCORE))
     {
+    	SetNextTime(e_flNextHudBlockedUntil, 0.02); // A tick is 0.015s by default (PreThink runs every tick).
     	return; // Don't show hud when player is viewing scoreboard, as it will only flash violently
     }
 
@@ -2979,6 +2985,8 @@ stock GetNewBossHealth(bossIdx)
 	return result;
 }
 
+// chdata.inc contents below
+
 #if !defined _smlib_included
 /* SMLIB
  * Precaches the given particle system.
@@ -3099,4 +3107,44 @@ TE_Particle(String:Name[],
     }
     TE_WriteNum("m_bResetParticles", resetParticles ? 1 : 0);    
     TE_SendToAll(delay);
+}
+
+static Float:g_flNext[e_flNext];
+
+stock bool:IsNextTime(iIndex, Float:flAdditional = 0.0)
+{
+    return (GetEngineTime() >= g_flNext[iIndex]+flAdditional);
+}
+
+stock SetNextTime(iIndex, Float:flTime, bool:bAbsolute = false)
+{
+    g_flNext[iIndex] = bAbsolute ? flTime : GetEngineTime() + flTime;
+}
+
+stock Float:GetNextTime(iIndex)
+{
+    return g_flNext[iIndex];
+}
+
+stock Float:GetTimeTilNextTime(iIndex, bool:bNonNegative = true)
+{
+    return bNonNegative ? fmax(g_flNext[iIndex] - GetEngineTime(), 0.0) : (g_flNext[iIndex] - GetEngineTime());
+}
+
+stock GetSecsTilNextTime(iIndex, bool:bNonNegative = true)
+{
+    return RoundToFloor(GetTimeTilNextTime(iIndex, bNonNegative));
+}
+
+/*
+    If next time occurs, we also add time on for when it is next allowed.
+*/
+stock bool:IfDoNextTime(iIndex, Float:flThenAdd)
+{
+    if (IsNextTime(iIndex))
+    {
+        SetNextTime(iIndex, flThenAdd);
+        return true;
+    }
+    return false;
 }
